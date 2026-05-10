@@ -1,0 +1,8 @@
+websockets>=12.0
+Pillow>=10.0
+
+# Mac only (install on macOS):
+# pip install pyobjc-framework-Cocoa
+
+# Windows only (install on Windows):
+# pip install pywin32

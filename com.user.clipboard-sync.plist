@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.user.clipboard-sync</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/jyh030112/miniconda3/envs/ai_env/bin/python</string>
+        <string>/Users/jyh030112/Desktop/mac-win互通粘贴板/clipboard_sync/clipboard_sync.py</string>
+        <string>--mode</string>
+        <string>server</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/jyh030112/Desktop/mac-win互通粘贴板/clipboard_sync</string>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/clipboard-sync.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/tmp/clipboard-sync.log</string>
+</dict>
+</plist>
