@@ -1,133 +1,56 @@
-# MAC ↔ WIN 跨平台剪贴板同步工具
+# Rust 跨平台剪贴板同步
 
-你是否在 Mac 和 Windows 之间来回切换时，被剪贴板不同步的问题搞得焦头烂额？辛苦在 Mac 上复制的一段代码，切换到 Windows 按下 Ctrl+V 却发现空空如也；或者在 Windows 上截了一张图，想粘贴到 Mac 上却还要通过微信/QQ 中转。这些琐碎的操作每天都在消耗你的耐心和时间。
+基于 Rust 的 macOS、Windows、Linux 局域网 P2P 剪贴板同步工具。每个运行中的实例都是平等的 Peer：自动发现局域网设备，建立直接 WebSocket 连接，不依赖中心 Hub。
 
-**现在，有了这款工具，一切都不一样了。** 它会在后台默默运行，帮你把 Mac 和 Windows 的剪贴板实时同步——无论是复制的文字还是截图，都能瞬间出现在另一台电脑上。就像它们共用了一个剪贴板一样自然。**（当然你的iphone也会实时同步）**
-坐下来，复制，粘贴，就这么简单。
+## 功能
 
-Mac ↔ Windows 局域网剪贴板实时同步，支持**文本**和**图片**。
+- P2P 直连，不存在中心服务器
+- UDP 自动发现，支持手动指定 Peer
+- 文本和 PNG 图片同步
+- 根据设备 ID 拒绝重复连接
+- 事件 ID 和有限去重缓存，防止消息回环
+- Lamport 版本排序，保证并发更新最终一致
+- 二进制协议、payload hash 校验、16 MiB 大小限制
+- 通过 `arboard` 支持 Linux X11/XWayland 和 Wayland
 
+## 环境要求
 
-## 功能特性
+- Rust stable 工具链
+- macOS、Windows 或 Linux 桌面环境
+- Linux 需要 X11/XWayland，或支持 data-control 的 Wayland 合成器
+- 局域网允许 TCP `8765` 和 UDP `8766`
 
-- 文本/图片双向同步
-- 断线自动重连
-- 防回环保护
+## 运行
 
-## 依赖
-
-| 依赖 | 版本 | 说明 |
-|------|------|------|
-| Python | ≥ 3.9 | 运行环境 |
-| websockets | ≥ 12.0 | WebSocket 通信 |
-| Pillow | ≥ 10.0 | 图片格式转换 |
-| pyobjc-framework-Cocoa | latest | **仅 Mac**，读取剪贴板图片 |
-| pywin32 | latest | **仅 Windows**，读写剪贴板 |
-
-## 注意事项
-
-1. **网络要求**：Mac 和 Windows 必须在同一局域网，且 UDP 端口 8766 和 TCP 端口 8765 不被防火墙拦截
-2. **Python 路径**：在mac端修改`setup_mac.sh` 中的Python路径，在win端修改`setup_windows.bat` 中的`CONDA_ROOT`和`CONDA_ENV`
-3. **macOS 权限**：首次运行时，终端/IDE 需要辅助功能权限才能读取剪贴板
-4. **Windows 编译**：`pywin32` 可能需要 Visual C++ 编译环境
-
-## 快速开始
-
-### 1. 安装
-
-**Mac 端**（一键安装）：
+自动发现并启动 Peer：
 
 ```bash
-cd clipboard_sync
-bash setup_mac.sh
+cargo run --release
 ```
 
-该脚本会自动执行：安装 Python 依赖 → 注册 LaunchAgent 开机自启 → 立即启动服务。
-
-**Windows 端**（一键安装）：
-
-```cmd
-cd clipboard_sync
-setup_windows.bat
-```
-
-该脚本会自动执行：安装 Python 依赖 → 创建启动文件夹快捷方式 → 立即启动客户端。
-
-### 2. 手动运行
-
-**Mac 端**（服务器）：
+网络禁止 UDP 广播时手动连接：
 
 ```bash
-python clipboard_sync.py --mode server
+cargo run --release -- --peer 192.168.1.100:8765
+cargo run --release -- --discovery false --peer 192.168.1.100:8765
 ```
 
-**Windows 端**（客户端）：
+使用 `--bind 0.0.0.0:8765` 修改监听地址，使用 `--device-id` 指定稳定设备 ID。每对设备中，ID 较小的一方主动建立连接，另一方接受连接。
 
-```cmd
-python clipboard_sync.py --mode client
-```
-
-客户端会自动通过 UDP 广播发现 Mac 服务器，无需指定 IP。
-
-### 3. 高级选项
+## 开发检查
 
 ```bash
-# 指定端口
-python clipboard_sync.py --mode server --port 9090
-
-# Client 手动指定 IP（跳过自动发现）
-python clipboard_sync.py --mode client --host 192.168.1.100
-
-# 指定 IP + 端口
-python clipboard_sync.py --mode client --host 192.168.1.100 --port 9090
+cargo fmt --all -- --check
+cargo check --all-targets --locked
+cargo clippy --all-targets --all-features --locked -- -D warnings
+cargo test --all-targets --locked
+cargo build --release --locked
 ```
 
-## 文件结构
+代码按深模块划分：`src/protocol.rs` 负责协议校验，`src/sync_engine.rs` 负责版本排序和去重，`src/network.rs` 负责 Peer 连接与发现，`src/clipboard.rs` 负责跨平台剪贴板 Adapter。
 
-```
-clipboard_sync/
-├── clipboard_sync.py          # 主程序（Server/Client 模式、UDP 发现、WebSocket）
-├── clipboard_mac.py           # Mac 剪贴板读写模块（pbpaste/pbcopy + AppKit）
-├── clipboard_win.py           # Windows 剪贴板读写模块（win32clipboard）
-├── setup_mac.sh               # Mac 一键安装脚本
-├── setup_windows.bat          # Windows 一键安装脚本
-├── com.user.clipboard-sync.plist  # macOS LaunchAgent 配置
-└── requirements.txt           # Python 依赖
-```
+GitHub Actions 会在 Ubuntu、macOS、Windows 上运行格式检查、Clippy、测试和 Release 构建。单元测试不依赖真实桌面剪贴板；实际剪贴板权限和 Wayland 合成器行为仍需在目标设备上进行冒烟测试。
 
-## 日志
+## 安全说明
 
-- **Mac**：日志输出到 `/tmp/clipboard-sync.log`
-  ```bash
-  tail -f /tmp/clipboard-sync.log
-  ```
-- **Windows**：日志输出到控制台
-
-## 服务管理
-
-**Mac：**
-
-```bash
-# 查看状态
-launchctl list | grep clipboard-sync
-
-# 停止服务
-launchctl unload ~/Library/LaunchAgents/com.user.clipboard-sync.plist
-
-# 启动服务
-launchctl load ~/Library/LaunchAgents/com.user.clipboard-sync.plist
-
-# 卸载（彻底移除）
-launchctl unload ~/Library/LaunchAgents/com.user.clipboard-sync.plist
-rm ~/Library/LaunchAgents/com.user.clipboard-sync.plist
-```
-
-**Windows：**
-
-```cmd
-# 停止
-taskkill /f /im python.exe
-
-# 删除开机自启
-del "%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\clipboard_sync.vbs"
-```
+当前局域网协议未加密且没有认证，只能运行在可信的私有网络中。在开放网络前必须加入设备认证、配对和加密传输。

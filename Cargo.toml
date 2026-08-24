@@ -1,0 +1,29 @@
+[package]
+name = "clipboard-sync"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Peer-to-peer clipboard synchronization for macOS, Windows, and Linux"
+license = "MIT"
+
+[dependencies]
+arboard = { version = "3.6.1", features = ["wayland-data-control"] }
+bincode = "1.3.3"
+blake3 = "1"
+clap = { version = "4", features = ["derive"] }
+futures-util = "0.3"
+image = "0.25"
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+tokio = { version = "1", features = ["macros", "net", "rt-multi-thread", "signal", "sync", "time"] }
+tokio-tungstenite = "0.30"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+uuid = { version = "1", features = ["serde", "v4"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "net", "rt-multi-thread", "signal", "sync", "time"] }
+
+[[bin]]
+name = "clipboard-sync"
+path = "src/main.rs"
