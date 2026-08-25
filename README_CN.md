@@ -1,6 +1,6 @@
 # Rust 跨平台剪贴板同步
 
-基于 Rust 的 macOS、Windows、Linux 局域网 P2P 剪贴板同步工具。每个运行中的实例都是平等的 Peer：自动发现局域网设备，建立直接 WebSocket 连接，不依赖中心 Hub。
+基于 Rust 的 macOS、Windows、Linux 局域网 P2P 剪贴板同步工具。每个运行中的实例都是平等的 Peer：自动发现局域网设备，建立直接 WebSocket 连接，不依赖中心 Hub
 
 ## 功能
 
